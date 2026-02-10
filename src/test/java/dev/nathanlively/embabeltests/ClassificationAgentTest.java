@@ -30,8 +30,9 @@ public class ClassificationAgentTest {
 
         List<PromptContributor> promptContributors = llmInvocation.getInteraction().getPromptContributors();
         assertThat(promptContributors)
-                .as("The agent should provide classification examples to the LLM")
-                .isNotEmpty();
+                .as("The agent should provide 3 classification examples to the LLM")
+                .isNotEmpty()
+                .hasSize(3);
 
         assertThat(llmInvocation.getInteraction().getToolGroups())
                 .as("No tools are necessary.")
@@ -41,7 +42,7 @@ public class ClassificationAgentTest {
 
         String prompt = llmInvocation.getPrompt();
         assertThat(prompt).isEqualTo("""
-                Analyze the user input. Split it into individual requests. Determine if each request is a command, a query, or other..
+                Analyze the user input. Split it into individual requests. Determine if each request is a command, a query, or other (not related to mixer control). Each fragment must be self-contained with all necessary context. Avoid ambiguity like pronouns like "their" or "them".
                 
                 ## User input
                 

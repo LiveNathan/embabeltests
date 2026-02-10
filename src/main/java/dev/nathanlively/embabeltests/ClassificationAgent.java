@@ -12,28 +12,25 @@ public class ClassificationAgent {
         return ai.withLlm(LlmOptions.withAutoLlm().withTemperature(0.1))
                 .withId("classify-intent")
                 .creating(ClassifiedIntents.class)
-                .withExample("Request example: Where's the lead vocal? Send it to the vocal buss.", createIndependentRequestsExample())
-                .withExample("Request example: Rename channels 1-4 to RF 1-4 then change the color to red and then disable routes to main.", createCompoundRequestExample())
-                .withExample("Request example: Hello there!", createOtherRequestExample())
+                .withExample("Query example: Where's the lead vocal?", createQueryExample())
+                .withExample("Command example: Rename channels 1-4 to RF 1-4", createCommandExample())
+                .withExample("Other example: Hello there robot!", createOtherExample())
                 .fromPrompt(createClassifyIntentPrompt(userInput));
     }
 
-    private ClassifiedIntents createIndependentRequestsExample() {
+    private ClassifiedIntents createQueryExample() {
         return new ClassifiedIntents(Set.of(
-                new RequestFragment("Where is the lead vocal channel?", RequestFragment.RequestType.QUERY),
-                new RequestFragment("Send the lead vocal channel to the vocal buss.", RequestFragment.RequestType.COMMAND)));
+                new RequestFragment("Which channel is named lead vocal?", RequestFragment.RequestType.QUERY)));
     }
 
-    private ClassifiedIntents createCompoundRequestExample() {
+    private ClassifiedIntents createCommandExample() {
         return new ClassifiedIntents(Set.of(
-                new RequestFragment("Rename channels 1 through 4 to RF 1 through 4.", RequestFragment.RequestType.COMMAND),
-                new RequestFragment("Change the color of channels 1 through 4 to red.", RequestFragment.RequestType.COMMAND),
-                new RequestFragment("Disable all routes to main for channels 1 through 4.", RequestFragment.RequestType.COMMAND)));
+                new RequestFragment("Rename channels 1 through 4 to RF 1 through RF 4.", RequestFragment.RequestType.COMMAND)));
     }
 
-    private ClassifiedIntents createOtherRequestExample() {
+    private ClassifiedIntents createOtherExample() {
         return new ClassifiedIntents(Set.of(
-                new RequestFragment("Hello there!", RequestFragment.RequestType.OTHER)));
+                new RequestFragment("Hello there robot!", RequestFragment.RequestType.OTHER)));
     }
 
     String createClassifyIntentPrompt(String userInput) {
