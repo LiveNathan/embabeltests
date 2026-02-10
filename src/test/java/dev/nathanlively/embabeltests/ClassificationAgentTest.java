@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
 
-import static dev.nathanlively.embabeltests.RequestFragment.RequestType.QUERY;
+import static dev.nathanlively.embabeltests.ClassificationAgent.RequestFragment.RequestType.QUERY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ClassificationAgentTest {
@@ -17,8 +17,8 @@ class ClassificationAgentTest {
     void givenUserInput_whenClassifying_thenBuildsLlmInteractionCorrectly() {
         // Given
         String userInput = "What is the capital of Portugal?";
-        ClassifiedIntents dummyResponse = new ClassifiedIntents(
-                Set.of(new RequestFragment("any", QUERY)));
+        ClassificationAgent.ClassifiedIntents dummyResponse = new ClassificationAgent.ClassifiedIntents(
+                Set.of(new ClassificationAgent.RequestFragment("any", QUERY)));
         FakeOperationContext context = FakeOperationContext.create();
         context.expectResponse(dummyResponse);
         ClassificationAgent agent = new ClassificationAgent();
@@ -36,8 +36,8 @@ class ClassificationAgentTest {
 
         List<PromptContributor> examples = invocation.getInteraction().getPromptContributors();
         assertThat(examples)
-                .as("Should provide three classification examples (query, command, other)")
-                .hasSize(3);
+                .as("Should provide four classification examples (query, command, other, multiple requests)")
+                .hasSize(4);
 
         assertThat(invocation.getInteraction().getToolGroups())
                 .as("Should not require any tools")

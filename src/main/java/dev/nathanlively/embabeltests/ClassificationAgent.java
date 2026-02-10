@@ -6,12 +6,12 @@ import com.embabel.common.ai.model.LlmOptions;
 
 import java.util.Set;
 
-import static dev.nathanlively.embabeltests.RequestFragment.RequestType.*;
+import static dev.nathanlively.embabeltests.ClassificationAgent.RequestFragment.RequestType.*;
 
 @Agent(description = "Classifies user requests into intents")
 public class ClassificationAgent {
 
-    private static final double LOW_TEMPERATURE = 0.1;
+    private static final double TEMPERATURE = 0.1;
     private static final String INTERACTION_ID = "classify-intent";
 
     private ClassifiedIntents queryExample() {
@@ -29,6 +29,12 @@ public class ClassificationAgent {
                 new RequestFragment("Hello there robot!", OTHER)));
     }
 
+    private ClassifiedIntents independentRequestsExample() {
+        return new ClassifiedIntents(Set.of(
+                new RequestFragment("Which channel is named lead vocal?", QUERY),
+                new RequestFragment("Send the channel named lead vocal to the mix buss named vocal.", COMMAND)));
+    }
+
     private String buildPrompt(String userInput) {
         return """
                 Analyze the user input. Split it into individual requests. Determine if each request \
@@ -40,13 +46,21 @@ public class ClassificationAgent {
                 %s""".formatted(userInput.trim());
     }
 
-    public ClassifiedIntents classify(String userInput, Ai ai) {
-        return ai.withLlm(LlmOptions.withAutoLlm().withTemperature(LOW_TEMPERATURE))
+    ClassifiedIntents classify(String userInput, Ai ai) {
+        return ai.withLlm(LlmOptions.withAutoLlm().withTemperature(TEMPERATURE))
                 .withId(INTERACTION_ID)
                 .creating(ClassifiedIntents.class)
                 .withExample("Query example: Where's the lead vocal?", queryExample())
                 .withExample("Command example: Rename channels 1-4 to RF 1-4", commandExample())
                 .withExample("Other example: Hello there robot!", otherExample())
+                .withExample("Multiple requests example: Where's the lead vocal? Send it to the vocal buss.", independentRequestsExample())
                 .fromPrompt(buildPrompt(userInput));
+    }
+
+    record ClassifiedIntents(Set<RequestFragment> fragments) {
+    }
+
+    record RequestFragment(String description, RequestType type) {
+        public enum RequestType {COMMAND, QUERY, OTHER}
     }
 }
