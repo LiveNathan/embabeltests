@@ -14,22 +14,22 @@ public class ClassificationAgent {
     private static final double LOW_TEMPERATURE = 0.1;
     private static final String INTERACTION_ID = "classify-intent";
 
-    private static ClassifiedIntents queryExample() {
+    private ClassifiedIntents queryExample() {
         return new ClassifiedIntents(Set.of(
                 new RequestFragment("Which channel is named lead vocal?", QUERY)));
     }
 
-    private static ClassifiedIntents commandExample() {
+    private ClassifiedIntents commandExample() {
         return new ClassifiedIntents(Set.of(
                 new RequestFragment("Rename channels 1 through 4 to RF 1 through RF 4.", COMMAND)));
     }
 
-    private static ClassifiedIntents otherExample() {
+    private ClassifiedIntents otherExample() {
         return new ClassifiedIntents(Set.of(
                 new RequestFragment("Hello there robot!", OTHER)));
     }
 
-    private static String buildPrompt(String userInput) {
+    private String buildPrompt(String userInput) {
         return """
                 Analyze the user input. Split it into individual requests. Determine if each request \
                 is a command, a query, or other (not related to mixer control). Each fragment must be \
