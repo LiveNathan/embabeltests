@@ -1,54 +1,118 @@
 package dev.nathanlively.embabeltests;
 
 import com.embabel.agent.test.unit.FakeOperationContext;
-import com.embabel.agent.test.unit.LlmInvocation;
-import com.embabel.common.ai.prompt.PromptContributor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Set;
 
+import static dev.nathanlively.embabeltests.RequestFragment.RequestType.QUERY;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ClassificationAgentTest {
+@DisplayName("ClassificationAgent")
+class ClassificationAgentTest {
+
+    private static final String USER_INPUT = "What is the capital of Portugal?";
+    private static final int EXPECTED_EXAMPLE_COUNT = 3;
+    private static final double EXPECTED_TEMPERATURE = 0.1;
+    private static final String EXPECTED_INTERACTION_ID = "classify-intent";
+
+    private ClassificationAgent agent;
+    private FakeOperationContext context;
+
+    @BeforeEach
+    void setUp() {
+        agent = new ClassificationAgent();
+        context = FakeOperationContext.create();
+
+        var dummyResponse = new ClassifiedIntents(
+                Set.of(new RequestFragment("any", QUERY)));
+        context.expectResponse(dummyResponse);
+    }
 
     @Test
-    void classifyIntent_assemblesCorrectPromptAndExamples() {
-        ClassifiedIntents dummyResponse = new ClassifiedIntents(Set.of(new RequestFragment("any", RequestFragment.RequestType.QUERY)));
-        final FakeOperationContext context = FakeOperationContext.create();
-        context.expectResponse(dummyResponse);
-        ClassificationAgent agent = new ClassificationAgent();
-        String userInput = "What is the capital of Portugal?";
+    @DisplayName("should call LLM exactly once")
+    void shouldCallLlmOnce() {
+        agent.classify(USER_INPUT, context.ai());
 
-        agent.with(userInput, context.ai());
+        var invocations = context.getLlmInvocations();
+        assertThat(invocations)
+                .as("LLM should be called exactly once")
+                .hasSize(1);
+    }
 
-        final List<LlmInvocation> llmInvocations = context.getLlmInvocations();
-        final LlmInvocation llmInvocation = llmInvocations.getFirst();
-        assertThat(llmInvocations.size())
-                .as("The LLM should only be called once.")
-                .isEqualTo(1);
+    @Test
+    @DisplayName("should provide three classification examples")
+    void shouldProvideClassificationExamples() {
+        agent.classify(USER_INPUT, context.ai());
 
-        List<PromptContributor> promptContributors = llmInvocation.getInteraction().getPromptContributors();
-        assertThat(promptContributors)
-                .as("The agent should provide 3 classification examples to the LLM")
-                .isNotEmpty()
-                .hasSize(3);
+        var invocation = context.getLlmInvocations().getFirst();
+        var examples = invocation.getInteraction().getPromptContributors();
 
-        assertThat(llmInvocation.getInteraction().getToolGroups())
-                .as("No tools are necessary.")
+        assertThat(examples)
+                .as("Should provide query, command, and other examples")
+                .hasSize(EXPECTED_EXAMPLE_COUNT);
+    }
+
+    @Test
+    @DisplayName("should not use any tools")
+    void shouldNotUseToos() {
+        agent.classify(USER_INPUT, context.ai());
+
+        var invocation = context.getLlmInvocations().getFirst();
+        var toolGroups = invocation.getInteraction().getToolGroups();
+
+        assertThat(toolGroups)
+                .as("Classification should not require tools")
                 .isEmpty();
-        assertThat(llmInvocation.getInteraction().getLlm().getTemperature())
-                .isEqualTo(0.1);
+    }
 
-        String prompt = llmInvocation.getPrompt();
-        assertThat(prompt).isEqualTo("""
-                Analyze the user input. Split it into individual requests. Determine if each request is a command, a query, or other (not related to mixer control). Each fragment must be self-contained with all necessary context. Avoid ambiguity like pronouns like "their" or "them".
+    @Test
+    @DisplayName("should use low temperature for consistent classification")
+    void shouldUseLowTemperature() {
+        agent.classify(USER_INPUT, context.ai());
+
+        var invocation = context.getLlmInvocations().getFirst();
+        var temperature = invocation.getInteraction().getLlm().getTemperature();
+
+        assertThat(temperature)
+                .as("Should use low temperature for deterministic results")
+                .isEqualTo(EXPECTED_TEMPERATURE);
+    }
+
+    @Test
+    @DisplayName("should generate correct classification prompt")
+    void shouldGenerateCorrectPrompt() {
+        agent.classify(USER_INPUT, context.ai());
+
+        var invocation = context.getLlmInvocations().getFirst();
+        var prompt = invocation.getPrompt();
+
+        var expectedPrompt = """
+                Analyze the user input. Split it into individual requests. Determine if each request \
+                is a command, a query, or other (not related to mixer control). Each fragment must be \
+                self-contained with all necessary context. Avoid ambiguity like pronouns like "their" or "them".
                 
                 ## User input
                 
-                %s""".formatted(userInput));
+                %s""".formatted(USER_INPUT);
 
-        assertThat(llmInvocation.getInteraction().getId())
-                .isEqualTo("classify-intent");
+        assertThat(prompt)
+                .as("Should generate properly formatted classification prompt")
+                .isEqualTo(expectedPrompt);
+    }
+
+    @Test
+    @DisplayName("should use correct interaction ID")
+    void shouldUseCorrectInteractionId() {
+        agent.classify(USER_INPUT, context.ai());
+
+        var invocation = context.getLlmInvocations().getFirst();
+        var interactionId = invocation.getInteraction().getId();
+
+        assertThat(interactionId)
+                .as("Should identify the interaction for tracing")
+                .isEqualTo(EXPECTED_INTERACTION_ID);
     }
 }
