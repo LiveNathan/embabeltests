@@ -50,4 +50,19 @@ class ClassificationAgentIntegrationTest {
                 .contains(ClassificationAgent.RequestFragment.RequestType.QUERY);
     }
 
+    @Test
+    void givenUserInputCommand_whenClassify_thenReturnsSetOfSizeOneWithTypeCommand() {
+        String userInput = "Channel 2 should be named kick out.";
+
+        ClassificationAgent.ClassifiedIntents actual = agent.classify(userInput, ai);
+
+        IO.println("Classified intents:" + actual);
+        assertThat(actual).isNotNull();
+        assertThat(actual.fragments())
+                .as("Should identify a single intent of type COMMAND")
+                .hasSize(1)
+                .extracting(ClassificationAgent.RequestFragment::type)
+                .contains(ClassificationAgent.RequestFragment.RequestType.COMMAND);
+    }
+
 }
