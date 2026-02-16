@@ -35,17 +35,19 @@ class ClassificationAgentIntegrationTest {
                 .contains(ClassificationAgent.RequestFragment.RequestType.OTHER);
     }
 
-//    @Test
-//    void classifyIntent_returnsClassifiedIntentsFromRealLlm() {
-//        String userInput = "Rename channel 1 to Kick and tell me the name of channel 2";
-//
-//        ClassificationAgent.ClassifiedIntents actual = agent.classify(userInput, ai);
-//
-//        IO.println("Classified intents:" + actual);
-//        assertThat(actual)
-//                .isNotNull()
-//                .extracting(ClassificationAgent.ClassifiedIntents::fragments)
-//                .as("Should identify both a command and a query")
-//                .hasSizeGreaterThanOrEqualTo(2);
-//    }
+    @Test
+    void givenUserInputQuery_whenClassify_thenReturnsSetOfSizeOneWithTypeQuery() {
+        String userInput = "What channel is the snare on?";
+
+        ClassificationAgent.ClassifiedIntents actual = agent.classify(userInput, ai);
+
+        IO.println("Classified intents:" + actual);
+        assertThat(actual).isNotNull();
+        assertThat(actual.fragments())
+                .as("Should identify a single intent of type QUERY")
+                .hasSize(1)
+                .extracting(ClassificationAgent.RequestFragment::type)
+                .contains(ClassificationAgent.RequestFragment.RequestType.QUERY);
+    }
+
 }
