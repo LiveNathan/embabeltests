@@ -65,4 +65,26 @@ class ClassificationAgentIntegrationTest {
                 .contains(ClassificationAgent.RequestFragment.RequestType.COMMAND);
     }
 
+    @Test
+    void givenUserInputCommands_whenClassify_thenReturnsSetOfSizeTwoWithTypeCommand() {
+        String userInput = "Rename channels 1-4 to RF 1-4 and make them red";
+
+        ClassificationAgent.ClassifiedIntents actual = agent.classify(userInput, ai);
+
+        IO.println("Classified intents:" + actual);
+        assertThat(actual).isNotNull();
+        assertThat(actual.fragments())
+                .as("Should identify two command intents, each a self-contained sentence")
+                .hasSize(2)
+                .allSatisfy(fragment -> assertThat(fragment.type()).isEqualTo(ClassificationAgent.RequestFragment.RequestType.COMMAND))
+                .extracting(ClassificationAgent.RequestFragment::description)
+                .allSatisfy(description ->
+                        assertThat(description)
+                                .as("Each fragment should explicitly reference channels, not use pronouns like 'them'")
+                                .containsIgnoringCase("channel"))
+                .satisfiesExactlyInAnyOrder(
+                        description -> assertThat(description).containsIgnoringCase("rename"),
+                        description -> assertThat(description).containsIgnoringCase("red"));
+    }
+
 }
