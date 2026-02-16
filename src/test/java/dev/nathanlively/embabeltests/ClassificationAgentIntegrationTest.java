@@ -30,7 +30,9 @@ class ClassificationAgentIntegrationTest {
         assertThat(actual).isNotNull();
         assertThat(actual.fragments())
                 .as("Should identify a single intent of type OTHER")
-                .hasSize(1);
+                .hasSize(1)
+                .extracting(ClassificationAgent.RequestFragment::type)
+                .contains(ClassificationAgent.RequestFragment.RequestType.OTHER);
     }
 
 //    @Test
